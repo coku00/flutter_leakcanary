@@ -1,7 +1,13 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_leakcanary/src/leak/leak_node.dart';
 import 'package:flutter_leakcanary/src/leak_stream_watcher.dart';
 import 'package:flutter_leakcanary/src/task/leak_task.dart';
 import 'package:flutter_leakcanary/src/utils/log_util.dart';
+import 'package:flutter_leakcanary/src/widgets/leak_widget.dart';
+
+import 'bottom_route.dart';
 
 const int defaultCheckLeakDelay = 15;
 
@@ -12,41 +18,61 @@ class LeakObserver extends NavigatorObserver {
   final int checkLeakDelay;
 
   LeakObserver(
-      {this.checkLeakDelay = defaultCheckLeakDelay, this.shouldCheck}) {
-    LeakStream.getInstance().stream.listen((node) {
-      LogUtil.d("泄漏信息 \n${node.toString()}");
-    });
+      {required GlobalKey<NavigatorState> navigatorKey,
+      this.checkLeakDelay = defaultCheckLeakDelay,
+      this.shouldCheck}) {
+    if (kDebugMode) {
+      LeakStream.getInstance().stream.listen((node) {
+        LogUtil.d("泄漏信息 \n${node.toString()}");
+        List<LeakNode> nodeList = toList(node);
+
+        final RenderBox? targetRender =
+            navigatorKey.currentContext!.findRenderObject() as RenderBox?;
+        // print('targetRender ${targetRender?.paintBounds}');
+        BottomPopupCard.show(
+            navigatorKey.currentContext!, LeakWidget(nodeList));
+      });
+    }
   }
 
   @override
   void didPop(Route route, Route? previousRoute) {
+    if(kDebugMode)
     _remove(route);
   }
 
   @override
   void didPush(Route route, Route? previousRoute) {
+    if(kDebugMode)
     _add(route);
   }
 
   @override
   void didRemove(Route route, Route? previousRoute) {
+    if(kDebugMode)
     _remove(route);
   }
 
   @override
   void didReplace({Route? newRoute, Route? oldRoute}) {
-    if (newRoute != null) {
-      _add(newRoute);
+    if(kDebugMode){
+      if (newRoute != null) {
+        _add(newRoute);
+      }
+      if (oldRoute != null) {
+        _remove(oldRoute);
+      }
     }
-    if (oldRoute != null) {
-      _remove(oldRoute);
-    }
+
   }
 
   Map<String, Expando> _widgetRefMap = {};
   Map<String, Expando> _stateRefMap = {};
 
   void _add(Route route) {
+    if (route is BottomRoute) {
+      return;
+    }
     route.didPush().then((value) {
       Element? element = _getElementByRoute(route);
       if (element != null) {
@@ -82,7 +108,6 @@ class LeakObserver extends NavigatorObserver {
   String _generateKey(Route route) {
     return '${route.hashCode}-${route.runtimeType}';
   }
-
 
   Element? _getElementByRoute(Route route) {
     Element? element;

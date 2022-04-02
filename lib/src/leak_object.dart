@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_leakcanary/src/task/leak_task.dart';
 import 'package:flutter_leakcanary/src/widgets/leak_observer.dart';
 
@@ -9,9 +10,12 @@ class LeakObject {
   LeakObject._();
 
   LeakWatcher leakObject(Object object) {
-    _checkKey(object);
     LeakWatcher leakWatcher = LeakWatcher();
-    leakWatcher._add(object);
+    if (kDebugMode) {
+      _checkKey(object);
+      leakWatcher._add(object);
+    }
+
     return leakWatcher;
   }
 }

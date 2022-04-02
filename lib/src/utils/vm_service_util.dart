@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:flutter/foundation.dart';
 import 'package:vm_service/utils.dart';
 import 'package:vm_service/vm_service.dart';
 import 'package:vm_service/vm_service_io.dart';
@@ -9,11 +10,14 @@ VmService? _vmService;
 String? mainIsolateId;
 
 Future<void> _initVmService() async {
-  ServiceProtocolInfo serviceProtocolInfo = await Service.getInfo();
-  Uri url =
-      convertToWebSocketUrl(serviceProtocolUrl: serviceProtocolInfo.serverUri!);
-  _vmService = await vmServiceConnectUri(url.toString());
-  mainIsolateId = getIsolateId(sdkIsolate: sdk.Isolate.current);
+  if(kDebugMode){
+    ServiceProtocolInfo serviceProtocolInfo = await Service.getInfo();
+    Uri url =
+    convertToWebSocketUrl(serviceProtocolUrl: serviceProtocolInfo.serverUri!);
+    _vmService = await vmServiceConnectUri(url.toString());
+    mainIsolateId = getIsolateId(sdkIsolate: sdk.Isolate.current);
+  }
+
 }
 
 Future<VmService> getVmService() async {

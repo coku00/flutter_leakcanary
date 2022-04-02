@@ -44,7 +44,7 @@ class LeakTask {
         RetainingObject p = retainingPath.elements![i];
 
         LeakNode current = LeakNode();
-
+        current.parentField = p.parentField;
         bool skip = await parsers[p.value!.runtimeType]
                 ?.paresRefSkip(p.value!, p.parentField, current) ??
             true;
